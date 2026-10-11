@@ -1,22 +1,23 @@
-// backend/server.js
-
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
 dotenv.config();
 
-const connectDatabase = require('./src/config/database.config');
+// Database config import (Comment out if DB connection fails on Vercel free tier)
+// const connectDatabase = require('./src/config/database.config');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to database
-connectDatabase();
+// Connect to database only if not in Vercel serverless env (optional optimization)
+if (process.env.NODE_ENV !== 'production') {
+    // connectDatabase(); 
+}
 
 // CORS enable karein
 app.use(cors({
-  origin: '*',
+  origin: '*', // Production mein apni frontend URL dalein
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -24,7 +25,16 @@ app.use(cors({
 // Middleware
 app.use(express.json());
 
-// ⚠️ TEST ROUTES - Ye add karein
+// ✅ ROOT ROUTE - "Cannot GET /" fix karne ke liye
+app.get('/', (req, res) => {
+  res.json({ 
+    message: "Filnera Backend is Live! 🚀",
+    status: "Active",
+    docs: "Visit /api/home for data"
+  });
+});
+
+// ⚠️ TEST ROUTES
 app.get('/api', (req, res) => {
   res.json({ message: 'API Working', status: 'OK' });
 });
@@ -60,9 +70,16 @@ app.get('/api/home', (req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 API available at http://localhost:${PORT}/api`);
-  console.log(`🏠 Home API: http://localhost:${PORT}/api/home`);
-});
+// ✅ VERCEL COMPATIBLE EXPORT
+// Yeh line Vercel ko batati hai ki request handle karne ke liye 'app' use karein
+module.exports = app;
+
+// ✅ LOCAL DEVELOPMENT KE LIYE SERVER START
+// Sirf tab run karega jab file directly node se chalayi jaye, Vercel par ignore hogi
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📡 API available at http://localhost:${PORT}/api`);
+     console.log(`🏠 Home API: http://localhost:${PORT}/api/home`);
+  });
+}
